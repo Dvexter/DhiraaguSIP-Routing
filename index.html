@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISP Static Route Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mt-[20rem]">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">ISP Static Route Generator</h1>
+        
+        <!-- Configuration Form -->
+        <form id="configForm" class="space-y-4 mb-8">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">PBX IP</label>
+                    <input type="text" id="pbxIp" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                        pattern="^\d+\.\d+\.\d+\.\d+$">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Gateway (GW)</label>
+                    <input type="text" id="gateway" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        pattern="^\d+\.\d+\.\d+\.\d+$">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">SIP Server</label>
+                    <input type="text" id="server" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        pattern="^\d+\.\d+\.\d+\.\d+$">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Subnet Mask</label>
+                    <input type="text" id="subnet" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        value="255.255.255.252">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">DNS</label>
+                    <input type="text" id="dns" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        pattern="^\d+\.\d+\.\d+\.\d+$">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Port</label>
+                    <input type="number" id="port" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        value="5060">
+                </div>
+            </div>
+
+            <button type="submit" 
+                class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                Generate Routes
+            </button>
+        </form>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800">Generated Commands</h2>
+            
+            <div class="bg-gray-50 p-4 rounded-md">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-mono text-sm">Static Routes:</span>
+                    <button onclick="copyRoutes()" 
+                        class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy All
+                    </button>
+                </div>
+                <pre id="routeCommands" class="text-sm text-gray-700"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const config = {
+                pbxIp: document.getElementById('pbxIp').value,
+                gateway: document.getElementById('gateway').value,
+                server: document.getElementById('server').value,
+                subnet: document.getElementById('subnet').value,
+                dns: document.getElementById('dns').value,
+                port: document.getElementById('port').value
+            };
+
+            // Generate route commands
+            const routeCommands = 
+`route add -p 172.18.0.0 mask 255.255.0.0 ${config.gateway} metric 1
+route add -p 172.31.0.0 mask 255.255.0.0 ${config.gateway} metric 1
+route add -p 0.0.0.0 mask 0.0.0.0 ${config.gateway.replace(/\d+$/, '1')}`;
+
+            // Display results
+            document.getElementById('routeCommands').textContent = routeCommands;
+            document.getElementById('results').classList.remove('hidden');
+        });
+
+        function copyRoutes() {
+            const text = document.getElementById('routeCommands').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Routes copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
