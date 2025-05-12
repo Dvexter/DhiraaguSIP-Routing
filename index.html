@@ -8,10 +8,11 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
     <!-- Navigation Menu -->
+    <!-- Navigation Menu -->
     <div class="max-w-2xl mx-auto text-center mb-4 mt-[100px]">
         <div class="inline-flex bg-gray-100 rounded-lg p-1">
             <a href="index.html" class="px-4 py-2 font-medium rounded-md bg-white shadow-sm">Windows</a>
-            <a href="linux.html" class="px-4 py-2 font-medium rounded-md text-gray-700 hover:bg-gray-200">Debian</a>
+            <a href="linux.html" class="px-4 py-2 font-medium rounded-md text-gray-700 hover:bg-gray-200">Linux</a>
         </div>
     </div>
     
@@ -25,14 +26,14 @@
                     <label class="block text-sm font-medium text-gray-700">PBX IP *</label>
                     <input type="text" id="pbxIp" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="172.18.6.2"
+                        placeholder="192.XXX.XXX.XXX"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Gateway (GW) *</label>
                     <input type="text" id="gateway" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="172.18.6.1"
+                        placeholder="192.XXX.XXX.XXX"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
             </div>
@@ -58,12 +59,12 @@
                     <label class="block text-sm font-medium text-gray-700">DNS Server *</label>
                     <input type="text" id="dns" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="172.31.253.253"
+                        placeholder="192.XXX.XXX.XXX"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">SIP Port *</label>
-                    <input type="number" id="port" required
+                    <input disabled type="number" id="port" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         value="5060">
                 </div>

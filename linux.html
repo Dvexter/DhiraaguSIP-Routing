@@ -5,18 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dhiraagu SIP Trunk Static Route Generator [Linux]</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Reset form styles */
+        input, select {
+            all: unset;
+            box-sizing: border-box;
+            appearance: none;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        input:focus, select:focus {
+            outline: 2px solid #3b82f6;
+            border-color: #3b82f6;
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
     <!-- Navigation Menu -->
     <div class="max-w-2xl mx-auto text-center mb-4 mt-[100px]">
         <div class="inline-flex bg-gray-100 rounded-lg p-1">
             <a href="index.html" class="px-4 py-2 font-medium rounded-md text-gray-700 hover:bg-gray-200">Windows</a>
-            <a href="linux.html" class="px-4 py-2 font-medium rounded-md bg-white shadow-sm">Debian</a>
+            <a href="linux.html" class="px-4 py-2 font-medium rounded-md bg-white shadow-sm">Linux</a>
         </div>
     </div>
     
     <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Dhiraagu SIP Trunk Static Route Generator [Linux]</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Dhiraagu SIP Trunk Static Route Generator <span id="osTitle">[Linux]</span></h1>
+        
+        <!-- Distribution Selection -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Select Linux Distribution</label>
+            <select id="distroSelect" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                <option value="debian">Debian/Ubuntu</option>
+                <option value="centos">CentOS/RHEL</option>
+                <option value="freebsd">FreeBSD</option>
+            </select>
+        </div>
         
         <!-- Configuration Form -->
         <form id="configFormLinux" class="space-y-4 mb-8">
@@ -25,14 +60,14 @@
                     <label class="block text-sm font-medium text-gray-700">PBX IP *</label>
                     <input type="text" id="pbxIpLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="172.18.6.2"
+                        placeholder="192.XXX.XXX.XXX"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Gateway (GW) *</label>
                     <input type="text" id="gatewayLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="172.18.6.1"
+                        placeholder="192.XXX.XXX.XXX"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
             </div>
@@ -44,7 +79,13 @@
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="pbx.dhiraagu.com.mv">
                 </div>
-                <div>
+                <div id="interfaceContainer" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Network Interface *</label>
+                    <input type="text" id="interfaceLinux"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="eth0">
+                </div>
+                <div id="subnetContainer">
                     <label class="block text-sm font-medium text-gray-700">Subnet Mask *</label>
                     <input type="text" id="subnetLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -58,12 +99,12 @@
                     <label class="block text-sm font-medium text-gray-700">DNS Server *</label>
                     <input type="text" id="dnsLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="172.31.253.253"
+                        placeholder="192.XXX.XXX.XXX"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">SIP Port *</label>
-                    <input type="number" id="portLinux" required
+                    <label class="block text-sm font-medium text-gray-700">SIP Port</label>
+                    <input disabled type="number" id="portLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         value="5060">
                 </div>
@@ -82,13 +123,59 @@
             <div class="space-y-3" id="commandsContainerLinux">
                 <!-- Route commands will be inserted here -->
             </div>
+            
+            <!-- Permanent Routes Section (Only visible for certain distros) -->
+            <div id="permanentRoutesSection" class="mt-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">For Permanent Routes</h3>
+                <p class="text-sm text-gray-600 mb-3" id="permanentRoutesInstructions"></p>
+                <div class="bg-gray-50 p-3 rounded-md" id="permanentRoutesLinux">
+                    <!-- Permanent route settings will be inserted here -->
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('serverLinux').removeEventListener('input', null);
-        
-        // Add validation on blur instead of on input to prevent error loops
+        // Toggle interface/subnet field based on selected distro
+        document.getElementById('distroSelect').addEventListener('change', function(e) {
+            const selectedDistro = e.target.value;
+            const interfaceContainer = document.getElementById('interfaceContainer');
+            const subnetContainer = document.getElementById('subnetContainer');
+            const osTitle = document.getElementById('osTitle');
+            
+            // Update page title based on selection
+            switch(selectedDistro) {
+                case 'debian':
+                    osTitle.textContent = '[Debian/Ubuntu]';
+                    interfaceContainer.classList.add('hidden');
+                    subnetContainer.classList.remove('hidden');
+                    document.getElementById('interfaceLinux').removeAttribute('required');
+                    break;
+                case 'centos':
+                    osTitle.textContent = '[CentOS/RHEL]';
+                    interfaceContainer.classList.remove('hidden');
+                    subnetContainer.classList.add('hidden');
+                    document.getElementById('interfaceLinux').setAttribute('required', 'required');
+                    break;
+                case 'freebsd':
+                    osTitle.textContent = '[FreeBSD]';
+                    interfaceContainer.classList.remove('hidden');
+                    subnetContainer.classList.add('hidden');
+                    document.getElementById('interfaceLinux').setAttribute('required', 'required');
+                    break;
+            }
+        });
+
+        // Update interface filename when interface is changed (for CentOS)
+        document.getElementById('interfaceLinux').addEventListener('input', function(e) {
+            if (document.getElementById('distroSelect').value === 'centos') {
+                const interfaceFileName = document.getElementById('interfaceFileName');
+                if (interfaceFileName) {
+                    interfaceFileName.textContent = e.target.value.trim();
+                }
+            }
+        });
+
         document.getElementById('serverLinux').addEventListener('blur', function(e) {
             document.querySelectorAll('.error-message').forEach(el => el.remove()); // Clear previous errors
             
@@ -112,10 +199,16 @@
 
         document.getElementById('configFormLinux').addEventListener('submit', function(e) {
             e.preventDefault();
+            console.log("Form submitted");  // Debug log
             
             // Clear previous results and errors
             document.getElementById('resultsLinux').classList.add('hidden');
+            document.getElementById('permanentRoutesSection').classList.add('hidden');
             document.querySelectorAll('.error-message').forEach(el => el.remove());
+
+            // Get the selected distro
+            const selectedDistro = document.getElementById('distroSelect').value;
+            console.log("Selected distro:", selectedDistro);  // Debug log
 
             // Get form values
             const getValue = id => {
@@ -126,33 +219,88 @@
                 }
                 return element.value.trim();
             };
+            
             const config = {
                 pbxIp: getValue('pbxIpLinux'),
                 gateway: getValue('gatewayLinux'),
                 server: getValue('serverLinux'),
-                subnet: getValue('subnetLinux'),
                 dns: getValue('dnsLinux'),
                 port: getValue('portLinux')
             };
+            console.log("Config:", config);  // Debug log
+            
+            // Add subnet or interface based on the distro
+            if (selectedDistro === 'debian') {
+                config.subnet = getValue('subnetLinux');
+            } else {
+                config.interface = getValue('interfaceLinux');
+            }
 
             // Validate IP addresses
             const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
             
             let isValid = true;
             for(const [key, value] of Object.entries(config)) {
-                if(key !== 'port' && !ipPattern.test(value)) {
-                    showError(key, 'Invalid IP address format');
+                if(['pbxIp', 'gateway', 'dns', 'subnet'].includes(key) && !ipPattern.test(value)) {
+                    showError(key + 'Linux', 'Invalid IP address format');
                     isValid = false;
                 }
             }
 
             if(!isValid) return;
 
-            // Generate route commands for Linux Debian
-            const routes = [
-                `ip route add 172.18.0.0/16 via ${config.gateway} metric 1`,
-                `ip route add 172.31.0.0/16 via ${config.gateway} metric 1`
-            ];
+            // Variable to store route commands based on distro
+            let routes = [];
+            let permanentRoutes = [];
+            let permanentRouteInstructions = '';
+
+            // Generate appropriate commands based on distro
+            switch(selectedDistro) {
+                case 'debian':
+                    // Generate route commands for Debian/Ubuntu
+                    routes = [
+                        `ip route add 172.18.0.0/16 via ${config.gateway} metric 1`,
+                        `ip route add 172.31.0.0/16 via ${config.gateway} metric 1`
+                    ];
+                    
+                    // Debian doesn't typically need permanent route instructions in this UI
+                    break;
+                
+                case 'centos':
+                    // Generate temporary route commands for CentOS/RHEL
+                    routes = [
+                        `ip route add 172.18.0.0/16 via ${config.gateway} dev ${config.interface}`,
+                        `ip route add 172.31.0.0/16 via ${config.gateway} dev ${config.interface}`
+                    ];
+                    
+                    // Generate permanent route configuration
+                    permanentRoutes = [
+                        `# Static routes for Dhiraagu SIP Trunk`,
+                        `172.18.0.0/16 via ${config.gateway} dev ${config.interface}`,
+                        `172.31.0.0/16 via ${config.gateway} dev ${config.interface}`
+                    ];
+                    
+                    permanentRouteInstructions = `Create file <code>/etc/sysconfig/network-scripts/route-<span id="interfaceFileName">${config.interface}</span></code>:`;
+                    break;
+                
+                case 'freebsd':
+                    // Generate temporary route commands for FreeBSD
+                    routes = [
+                        `route add -net 172.18.0.0/16 ${config.gateway}`,
+                        `route add -net 172.31.0.0/16 ${config.gateway}`
+                    ];
+                    
+                    // Generate permanent route configuration
+                    permanentRoutes = [
+                        `# Static routes for Dhiraagu SIP Trunk`,
+                        `static_routes="dhiraagu_subnet1 dhiraagu_subnet2"`,
+                        `route_dhiraagu_subnet1="-net 172.18.0.0/16 ${config.gateway}"`,
+                        `route_dhiraagu_subnet2="-net 172.31.0.0/16 ${config.gateway}"`
+                    ];
+                    
+                    permanentRouteInstructions = `Add these lines to your <code>/etc/rc.conf</code> file:`;
+                    break;
+            }
 
             // Clear previous commands
             const container = document.getElementById('commandsContainerLinux');
@@ -179,8 +327,35 @@
                 container.appendChild(commandDiv);
             });
 
+            // Add permanent routes section if available
+            if (permanentRoutes.length > 0) {
+                const permanentSection = document.getElementById('permanentRoutesSection');
+                const permanentContainer = document.getElementById('permanentRoutesLinux');
+                const instructionsContainer = document.getElementById('permanentRoutesInstructions');
+                
+                instructionsContainer.innerHTML = permanentRouteInstructions;
+                permanentContainer.innerHTML = `<pre class="text-sm text-gray-700 w-full overflow-x-auto">${permanentRoutes.join('\n')}</pre>`;
+                
+                // Add a copy button for permanent routes
+                const copyAllBtn = document.createElement('button');
+                copyAllBtn.className = 'mt-2 ml-auto block text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-gray-100';
+                copyAllBtn.setAttribute('data-command', permanentRoutes.join('\n'));
+                copyAllBtn.setAttribute('title', 'Copy all');
+                copyAllBtn.innerHTML = `
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy All
+                    </span>
+                `;
+                permanentContainer.appendChild(copyAllBtn);
+                
+                permanentSection.classList.remove('hidden');
+            }
+
             // Add event listeners to copy buttons
-            document.querySelectorAll('.copy-btn').forEach(button => {
+            document.querySelectorAll('[data-command]').forEach(button => {
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     const command = button.getAttribute('data-command');
@@ -205,6 +380,9 @@
             error.textContent = message;
             input.parentNode.appendChild(error);
         }
+        
+        // Initialize the page with the default selection
+        document.getElementById('distroSelect').dispatchEvent(new Event('change'));
     </script>
     <footer class="mt-10 text-center text-gray-900 text-sm text-decoration-none">
         <a href="https://github.com/Dvexter" target="_blank" class="inline-flex items-center gap-1 text-gray-600 hover:underline">
