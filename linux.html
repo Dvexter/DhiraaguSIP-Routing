@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dhiraagu SIP Trunk Static Route Generator </title>
+    <title>Dhiraagu SIP Trunk Static Route Generator [Linux]</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
     <!-- Navigation Menu -->
     <div class="max-w-2xl mx-auto text-center mb-4 mt-[100px]">
         <div class="inline-flex bg-gray-100 rounded-lg p-1">
-            <a href="index.html" class="px-4 py-2 font-medium rounded-md bg-white shadow-sm">Windows</a>
-            <a href="linux.html" class="px-4 py-2 font-medium rounded-md text-gray-700 hover:bg-gray-200">Debian</a>
+            <a href="index.html" class="px-4 py-2 font-medium rounded-md text-gray-700 hover:bg-gray-200">Windows</a>
+            <a href="linux.html" class="px-4 py-2 font-medium rounded-md bg-white shadow-sm">Debian</a>
         </div>
     </div>
     
     <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Dhiraagu SIP Trunk Static Route Generator [Windows]</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Dhiraagu SIP Trunk Static Route Generator [Linux]</h1>
         
         <!-- Configuration Form -->
-        <form id="configForm" class="space-y-4 mb-8">
+        <form id="configFormLinux" class="space-y-4 mb-8">
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">PBX IP *</label>
-                    <input type="text" id="pbxIp" required
+                    <input type="text" id="pbxIpLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="172.18.6.2"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Gateway (GW) *</label>
-                    <input type="text" id="gateway" required
+                    <input type="text" id="gatewayLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="172.18.6.1"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
@@ -40,13 +40,13 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">SIP Server *</label>
-                    <input type="text" id="server" required
+                    <input type="text" id="serverLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="pbx.dhiraagu.com.mv">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Subnet Mask *</label>
-                    <input type="text" id="subnet" required
+                    <input type="text" id="subnetLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         value="255.255.255.252"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
@@ -56,14 +56,14 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">DNS Server *</label>
-                    <input type="text" id="dns" required
+                    <input type="text" id="dnsLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="172.31.253.253"
                         pattern="^\d+\.\d+\.\d+\.\d+$">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">SIP Port *</label>
-                    <input type="number" id="port" required
+                    <input type="number" id="portLinux" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         value="5060">
                 </div>
@@ -76,39 +76,63 @@
         </form>
 
         <!-- Results Section -->
-        <div id="results" class="hidden space-y-4">
+        <div id="resultsLinux" class="hidden space-y-4">
             <h2 class="text-xl font-semibold text-gray-800">Generated Commands</h2>
             
-            <div class="space-y-3" id="commandsContainer">
+            <div class="space-y-3" id="commandsContainerLinux">
                 <!-- Route commands will be inserted here -->
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('configForm').addEventListener('submit', function(e) {
+        document.getElementById('serverLinux').removeEventListener('input', null);
+        
+        // Add validation on blur instead of on input to prevent error loops
+        document.getElementById('serverLinux').addEventListener('blur', function(e) {
+            document.querySelectorAll('.error-message').forEach(el => el.remove()); // Clear previous errors
+            
+            const serverField = e.target;
+            const serverValue = serverField.value.trim();
+            const validDhiraaguServers = [
+                "pbx.dhiraagu.com.mv",
+                "http://pbx.dhiraagu.com.mv",
+                "https://pbx.dhiraagu.com.mv"
+            ];
+            
+            // Check if it's valid Dhiraagu server but don't update the field visibly
+            if (validDhiraaguServers.some(server => serverValue === server || serverValue.startsWith(server+"/"))) {
+                // Store the actual IP internally instead of changing the text field
+                serverField.dataset.serverIp = "172.31.241.10";
+            } else {
+                showError('serverLinux', 'ISP is not Dhiraagu (https://www.dhiraagu.com.mv/)');
+                serverField.dataset.serverIp = "";
+            }
+        });
+
+        document.getElementById('configFormLinux').addEventListener('submit', function(e) {
             e.preventDefault();
             
             // Clear previous results and errors
-            document.getElementById('results').classList.add('hidden');
+            document.getElementById('resultsLinux').classList.add('hidden');
             document.querySelectorAll('.error-message').forEach(el => el.remove());
 
             // Get form values
             const getValue = id => {
                 const element = document.getElementById(id);
                 // If this is the server field and we have a stored IP, use that
-                if (id === 'server' && element.dataset.serverIp) {
+                if (id === 'serverLinux' && element.dataset.serverIp) {
                     return element.dataset.serverIp;
                 }
                 return element.value.trim();
             };
             const config = {
-                pbxIp: getValue('pbxIp'),
-                gateway: getValue('gateway'),
-                server: getValue('server'),
-                subnet: getValue('subnet'),
-                dns: getValue('dns'),
-                port: getValue('port')
+                pbxIp: getValue('pbxIpLinux'),
+                gateway: getValue('gatewayLinux'),
+                server: getValue('serverLinux'),
+                subnet: getValue('subnetLinux'),
+                dns: getValue('dnsLinux'),
+                port: getValue('portLinux')
             };
 
             // Validate IP addresses
@@ -116,7 +140,7 @@
             
             let isValid = true;
             for(const [key, value] of Object.entries(config)) {
-                if(key !== 'port' && key !== 'server' && !ipPattern.test(value)) {
+                if(key !== 'port' && !ipPattern.test(value)) {
                     showError(key, 'Invalid IP address format');
                     isValid = false;
                 }
@@ -124,14 +148,14 @@
 
             if(!isValid) return;
 
-            // Generate route commands (only the two specific routes)
+            // Generate route commands for Linux Debian
             const routes = [
-                `route add -p 172.18.0.0 mask 255.255.0.0 ${config.gateway} metric 1`,
-                `route add -p 172.31.0.0 mask 255.255.0.0 ${config.gateway} metric 1`
+                `ip route add 172.18.0.0/16 via ${config.gateway} metric 1`,
+                `ip route add 172.31.0.0/16 via ${config.gateway} metric 1`
             ];
 
             // Clear previous commands
-            const container = document.getElementById('commandsContainer');
+            const container = document.getElementById('commandsContainerLinux');
             container.innerHTML = '';
 
             // Create individual command elements
@@ -171,32 +195,7 @@
                 });
             });
 
-            document.getElementById('results').classList.remove('hidden');
-        });
-
-        // Remove the event listener for input to prevent multiple errors
-        document.getElementById('server').removeEventListener('input', null);
-        
-        // Add validation on blur instead of on input to prevent error loops
-        document.getElementById('server').addEventListener('blur', function(e) {
-            document.querySelectorAll('.error-message').forEach(el => el.remove()); // Clear previous errors
-            
-            const serverField = e.target;
-            const serverValue = serverField.value.trim();
-            const validDhiraaguServers = [
-                "pbx.dhiraagu.com.mv",
-                "http://pbx.dhiraagu.com.mv",
-                "https://pbx.dhiraagu.com.mv"
-            ];
-            
-            // Check if it's valid Dhiraagu server but don't update the field visibly
-            if (validDhiraaguServers.some(server => serverValue === server || serverValue.startsWith(server+"/"))) {
-                // Store the actual IP internally instead of changing the text field
-                serverField.dataset.serverIp = "172.31.241.10";
-            } else {
-                showError('server', 'ISP is not Dhiraagu (https://www.dhiraagu.com.mv/)');
-                serverField.dataset.serverIp = "";
-            }
+            document.getElementById('resultsLinux').classList.remove('hidden');
         });
 
         function showError(fieldId, message) {
@@ -208,7 +207,6 @@
         }
     </script>
     <footer class="mt-10 text-center text-gray-900 text-sm text-decoration-none">
-        
         <a href="https://github.com/Dvexter" target="_blank" class="inline-flex items-center gap-1 text-gray-600 hover:underline">
             <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.26.82-.577
